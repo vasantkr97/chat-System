@@ -20,6 +20,8 @@ app.post("/auth/signup", signup);
 app.get("/auth/me",authentication, getMe);
 
 
+
+
 app.listen(3000, () => {
     console.log("server running at http://localhost:3000")
 })

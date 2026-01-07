@@ -14,22 +14,51 @@ datasource db {
 
 
 model User {
-  id                String @id  @default(cuid())
-  name              String 
-  password          String
-  email             String
-  role              ROLE
-  supervisorId      String?
+  id                  String      @id  @default(cuid())
+  name                String  
+  email               String      @unique
+  password            String
+  role                ROLE
+  supervisorId        String?
+
+  conversation        Conversation[]
+
+  createdAt           DateTime    @default(now())
+}
+
+model Conversation {
+  id                 String       @id       @default(cuid())   
+  candidateId        String
+  agentId            String
+  supervisorId       String
+  status             STATUS
+
+  userId             String 
+  user               User        @relation(fields: [userId], references: [id], onDelete: Cascade)  
+
+  messages           Message[] 
+
+  createdAt          DateTime      @default(now())
+}
+
+model Message {
+  id                String         @id    @default(cuid())
+  conversationId    String       
+  senderId          String
+  senderRole        String
+  content           String
+
+  conversation      Conversation   @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  createdAt         DateTime        @default(now())
+
 }
 
 
-model Conversation {
-  id                String    @id @default(cuid())
-  candidateId       String    
-  agentId           String
-  supervisorId      String
-  status            STATUS
-  createdAt         DateTime   @default(now())
+enum STATUS {
+  open
+  assigned
+  closed
 }
 
 
@@ -38,10 +67,4 @@ enum ROLE {
   supervisor
   agent
   candidate
-}
-
-enum STATUS {
-  open
-  assigned
-  closed
 }
