@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken"
 import dotenv from "dotenv";
 import { SigninSchema, SignupSchema } from "../types/zod.user";
 import { ZodError } from "zod";
+import { clearScreenDown } from "readline";
 dotenv.config()
 
 const JWT_SECRET = process.env.JWT_SECRET || "vasanth";
@@ -16,20 +17,6 @@ export const signup = async (req: Request, res: Response) =>{
 
         if (role === "agent" && !supervisorId) {
             return res.status(400).json({ success: false, error: "Invalid request schema"})
-        }
-
-        if (supervisorId) {
-            const supervisor = await prisma.user.findUnique({
-                where: { id: supervisorId }
-            })
-
-            if (!supervisor) {
-                return res.status(404).json({ success: false, error: "Supervisor not found"})
-            }
-
-            if (supervisor.role !== "supervisor") {
-                return res.status(400).json({ success: false, error: "Invalid supervisor role"})
-            }
         }
 
         const existingUser = await prisma.user.findFirst({
@@ -79,7 +66,6 @@ export const signup = async (req: Request, res: Response) =>{
     }
 }
 
-
 export const signin = async (req: Request, res: Response) => {
     try {
         const { email, password } = SigninSchema.parse(req.body);
@@ -126,7 +112,6 @@ export const signin = async (req: Request, res: Response) => {
     }
 };
 
-
 export const getMe = async (req: Request, res: Response) => {
     try {
         if (!req.user) {
@@ -153,3 +138,4 @@ export const getMe = async (req: Request, res: Response) => {
         })
     }
 }
+
