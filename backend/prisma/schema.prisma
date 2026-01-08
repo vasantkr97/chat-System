@@ -19,9 +19,16 @@ model User {
   email               String      @unique
   password            String
   role                ROLE
-  supervisorId        String?
 
-  conversation        Conversation[]
+
+  //self-relation: Agent belongs to Supervisor
+  supervisorId        String?
+  supervisor          User?      @relation("SupervisorAgents", fields: [supervisorId], references: [id])
+  agents              User[]     @relation("SupervisorAgents")
+
+  conversationAsCandidate    Conversation[]  @relation("CandidateConversations")
+  conversationAsAgent        Conversation[]  @relation("AgentConversations")
+  conversationAsSupervisor   Conversation[]  @relation("SupervisorConversations")
 
   createdAt           DateTime    @default(now())
 }
@@ -29,16 +36,16 @@ model User {
 model Conversation {
   id                 String       @id       @default(cuid())   
   candidateId        String
-  agentId            String
+  agentId            String?
   supervisorId       String
-  status             STATUS
+  status             STATUS         
+  createdAt          DateTime       @default(now())     
 
-  userId             String 
-  user               User        @relation(fields: [userId], references: [id], onDelete: Cascade)  
+  candidate          User           @relation("CandidateConversations", fields: [candidateId], references: [id])
+  agent              User?          @relation("AgentConversations", fields: [agentId], references: [id])
+  supervisor         User           @relation("SupervisorConversations", fields: [supervisorId], references: [id])
 
   messages           Message[] 
-
-  createdAt          DateTime      @default(now())
 }
 
 model Message {
@@ -55,16 +62,15 @@ model Message {
 }
 
 
+enum ROLE {
+  agent
+  candidate
+  supervisor
+  admin
+}
+
 enum STATUS {
   open
   assigned
   closed
-}
-
-
-enum ROLE {
-  admin
-  supervisor
-  agent
-  candidate
 }

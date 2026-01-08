@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors"
-import { getMe, signin, signup } from "./controllers/auth";
-import { authentication } from "./middleware/authentication";
+import { getMe, signin, signup } from "./controllers/authController";
+import { authentication } from "./middleware/auth";
 const app = express();
 
 app.use(cors())
