@@ -1,7 +1,9 @@
 import express from "express";
 import cors from "cors"
-import { getMe, signin, signup } from "./controllers/authController";
-import { authentication } from "./middleware/auth";
+import * as authController from "./controllers/auth.controller"
+import * as convController from "./controllers/conversation.controller"
+import * as adminController from "./controllers/admin.controller"
+import { authentication, authorize } from "./middleware/auth";
 const app = express();
 
 app.use(cors())
@@ -9,17 +11,20 @@ app.use(cors())
 app.use(express.json())
 
 
-app.get("/", (req, res) => {
+app.get("/", (_, res) => {
     res.send('healthy')
 })
 
-app.post("/auth/login", signin);
-
-app.post("/auth/signup", signup);
-
-app.get("/auth/me",authentication, getMe);
+app.post("/auth/login", authController.signin);
+app.post("/auth/signup", authController.signup);
+app.get("/auth/me", authentication, authController.getMe);
 
 
+app.post("/conversations", authentication, authorize(["candidate"]), convController.createConversation)
+app.post("/conversations/:id/assign", authentication, authorize(["supervisor"]), convController.assignAgent);
+app.post("/conversations/:id", authentication, convController.getConversation );
+app.post("/conversations/:id/close", authentication, authorize(["admin", "supervisor"]), convController.closeConversation)
+app.post("/admin/analytics", authentication, authorize(["admin"]), adminController.getAnalytics)
 
 
 app.listen(3000, () => {

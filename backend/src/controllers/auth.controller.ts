@@ -22,6 +22,20 @@ export const signup =async (req: Request, res: Response) => {
         return res.status(400).json({ "success": false, "error": "Invalid request schema"})
     }
 
+    if (supervisorId) {
+        const supervisor = await prisma.user.findUnique({
+            where: { id: supervisorId }
+        });
+
+        if (!supervisor) {
+            return res.status(404).json({ "success": false, "error": "Supervisor not found" });
+        }
+
+        if (supervisor.role !== "supervisor") {
+            return res.status(400).json({ "success": false, "error": "Invalid supervisor role" });
+        }
+    }
+
     try {
         const existing = await prisma.user.findFirst({
             where: {
@@ -45,7 +59,7 @@ export const signup =async (req: Request, res: Response) => {
             }
         })
 
-        const token = jwt.sign({ userId: newUser.id, role: newUser }, JWT_SECRET)
+        const token = jwt.sign({ userId: newUser.id, role: newUser.role }, JWT_SECRET)
 
         res.cookie("jwt", token,  {
             httpOnly: true,
@@ -86,7 +100,7 @@ export const signin = async (req: Request, res: Response) => {
         })
 
         if (!user) {
-            return res.status(404).json({ "success":false, "error": "Resource not found"})
+            return res.status(401).json({ "success":false, "error": "Unauthorized, token missing or invalid"})
         }
 
         const isMatching  = await bcrypt.compare(password, user.password);
@@ -122,7 +136,7 @@ export const getMe = async (req: Request, res: Response) => {
         }
     })
 
-    return {
+    return res.status(200).json({
         "success": true,
         "data": {
             "_id": user?.id,
@@ -130,6 +144,6 @@ export const getMe = async (req: Request, res: Response) => {
             "email": user?.email,
             "role": user?.role
         }
-    }
+    })
 }
 

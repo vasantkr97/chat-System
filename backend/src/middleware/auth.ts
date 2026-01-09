@@ -6,7 +6,6 @@ dotenv.config()
 const JWT_SECRET = process.env.JWT_SECRET || "vasanth"
 
 
-
 export const authentication = (req: Request, res: Response, next: NextFunction) => {
     const header = req.headers.authorization
 
@@ -32,4 +31,14 @@ export const authentication = (req: Request, res: Response, next: NextFunction) 
     } catch  {
         return res.status(401).json({ "success": false, "error": "Unauthorized, token missing or invalid"})
     }
+}
+
+export const authorize = (roles: string[]) => (req: Request, res: Response, next: NextFunction) => {
+    const user = req.user
+
+    if (!user || !roles.includes(user.role)) {
+        return res.status(403).json({ "success": false, "error": "Forbidden, insufficient permissions"})
+    }
+
+    next()
 }
