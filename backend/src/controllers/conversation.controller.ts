@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import prisma from "../lib/db";
-import { clearMessages, getMessages } from "../lib/inmemoryStore";
+import { clearMessages, getMessages, type InMemortMessage } from "../lib/inmemoryStore";
 
 
 //Candidate
@@ -145,14 +145,18 @@ export const getConversation = async (req: Request, res: Response) => {
             }
         }
 
-        let messages = []
+        let messages: InMemortMessage[] = []
 
         if (conversation.status === "assigned") {
             messages = getMessages(conversation.id)
         } else if (conversation.status === "closed") {
-            messages = await prisma.message.findMany({
+            const dbmessages = await prisma.message.findMany({
                 where: { conversationId }
             })
+            messages = dbmessages.map(msg => ({
+                ...msg,
+                createdAt: msg.createdAt.toString()
+            }))
         }
 
         return res.status(200).json({
@@ -167,16 +171,16 @@ export const getConversation = async (req: Request, res: Response) => {
             }
         })
     } catch (error: any) {
-        return res.status(500).json({ "success": false, "error": error.message})
+        return res.status(500).json({ "success": false, "error": error.message })
     }
 }
 
 
 export const closeConversation = async (req: Request, res: Response) => {
-    const  conversationId = req.params.id
+    const conversationId = req.params.id
 
     if (!conversationId) {
-        return res.status(400).json({ "success": false, 'error': "Invalid request schema"})
+        return res.status(400).json({ "success": false, 'error': "Invalid request schema" })
     }
 
     try {
@@ -185,11 +189,11 @@ export const closeConversation = async (req: Request, res: Response) => {
         })
 
         if (!conversation) {
-            return res.status(404).json({ "success": false, "error": "Conversation not found"})
+            return res.status(404).json({ "success": false, "error": "Conversation not found" })
         }
 
         if (conversation.status !== "open") {
-            return res.status(400).json({ "success": false, "error": "Conversation status mismatch (Must be open)"})
+            return res.status(400).json({ "success": false, "error": "Conversation status mismatch (Must be open)" })
         }
 
         const updated = await prisma.conversation.update({
@@ -199,12 +203,14 @@ export const closeConversation = async (req: Request, res: Response) => {
 
         clearMessages(conversationId);
 
-        return res.status(200).json({ "success": true, "data": {
-            "conversationId": conversation.id,
-            "status": updated.status
-        }})
+        return res.status(200).json({
+            "success": true, "data": {
+                "conversationId": conversation.id,
+                "status": updated.status
+            }
+        })
 
     } catch (error) {
-        return res.status(500).json({ "success": false, "error": "internal server error"})
+        return res.status(500).json({ "success": false, "error": "internal server error" })
     }
 }
